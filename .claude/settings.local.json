@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter:*)",
+      "Bash(git --version)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
