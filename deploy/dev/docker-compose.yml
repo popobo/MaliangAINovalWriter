@@ -1,0 +1,72 @@
+services:
+  mongo:
+    image: mongo:8.0
+    platform: linux/arm64
+    container_name: ainoval-mongo
+    restart: unless-stopped
+    # dev 开发模式：简化配置，不需要副本集
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+      - ./mongo-init-admin.js:/docker-entrypoint-initdb.d/mongo-init-admin.js:ro
+    environment:
+      # 开发环境使用简单的用户名密码
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin123
+      - MONGO_INITDB_DATABASE=ainovel
+    healthcheck:
+      test: |
+        mongosh --quiet -u admin -p admin123 --authenticationDatabase admin --eval "db.adminCommand('ping')" || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 40s
+
+  ainoval:
+    image: ainoval/ainoval-dev:latest
+    platform: linux/arm64
+    build:
+      context: ..
+      dockerfile: dev/Dockerfile
+    container_name: ainoval-dev
+    env_file:
+      - ./production.env
+    environment:
+      - SPRING_PROFILES_ACTIVE=open-dev
+      - JVM_XMS=${JVM_XMS:-512m}
+      - JVM_XMX=${JVM_XMX:-512m}
+      # 覆盖 dev 配置中的 localhost，直接指向 compose 中的 mongo 服务，使用简单认证
+      - SPRING_DATA_MONGODB_URI=${SPRING_DATA_MONGODB_URI:-mongodb://admin:admin123@mongo:27017/ainovel?authSource=admin}
+      - STORAGE_PROVIDER=${STORAGE_PROVIDER:-local}
+      - AINOVEL_STORAGE_TEST_ON_STARTUP=${AINOVEL_STORAGE_TEST_ON_STARTUP:-false}
+      - PROXY_ENABLED=${PROXY_ENABLED:-false}
+      # 番茄小说API配置 - 必需，否则应用无法启动
+      - FANQIE_API_BASE_URL=${FANQIE_API_BASE_URL:-http://127.0.0.1:5000}
+      - FANQIE_API_PUBLIC_URL=${FANQIE_API_PUBLIC_URL:-http://127.0.0.1:5000}
+      - FANQIE_API_TIMEOUT=${FANQIE_API_TIMEOUT:-30}
+      # 静态资源配置 - 支持主应用、管理员面板和Flutter Web
+      - SPRING_WEB_RESOURCES_STATIC_LOCATIONS=file:/app/web/,file:/app/admin_web/,file:/app/flutter_web/
+    ports:
+      - "18080:18080"
+      - "3000:3000"  # Flutter Web开发端口
+    volumes:
+      - ./logs:/var/log/ainoval
+      - ../../../MaliangAINovalWriter:/MaliangAINovalWriter
+      - ainoval-root-data:/root
+      - flutter-cache:/root/.pub-cache
+    working_dir: /app
+    command: ["sh", "-c", "while true; do sleep 10000; done"]
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo-data:
+  mongo-config:
+  ainoval-root-data:
+  flutter-cache:
+
+

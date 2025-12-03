@@ -1,0 +1,18 @@
+
+export ZSH="$HOME/.oh-my-zsh"
+
+ZSH_THEME="robbyrussell"
+
+plugins=(
+    git
+    zsh-autosuggestions
+    zsh-syntax-highlighting
+    z
+    extract
+    history-search-multi-word
+)
+
+source $ZSH/oh-my-zsh.sh
+
+export ZHIPUAI_API_KEY="1d28f2fd7f874f28a7c2eca7b723d925.sIhTAn8ryP7MnJuR"
+

@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
@@ -41,8 +40,8 @@ public class NovelKnowledgeBase {
     
     /**
      * 番茄小说ID（如果是番茄小说来源）
+     * 注意：该字段的索引已通过 @CompoundIndexes 中的 fanqie_novel_idx 定义，无需重复添加 @Indexed
      */
-    @Indexed(unique = true, sparse = true)
     private String fanqieNovelId;
     
     /**
